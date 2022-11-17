@@ -1,0 +1,100 @@
+homeassistant:
+  time_zone: Europe/Rome
+  customize:
+    package.node_anchors:
+      customize: &customize
+        package: "Tracking Prodotti Amazon 1.0"
+        author: "Saverio Gravagnola"
+        reference: "WebSite: domoticamente.saveriogravagnola.it"
+
+      ########################
+      # IMPOSTAZIONI PACKAGE #
+      ########################
+
+      setting:
+        Device per notifica push 1: &push1 mobile_app_sax
+        #Device per notifica push 2: &push2 mobile_app_2
+        #Device per notifica push 3: &push3 mobile_app_3
+        #Device per notifica push 4: &push4 mobile_app_4
+        #Device per notifica push 5: &push5 mobile_app_5
+
+####################
+# NOTIFICHE GRUPPO #
+####################
+
+notify:
+  - name: Amazon Gruppo Notifiche App
+    platform: group
+    services:
+      - service: *push1
+      #- service: *push2
+      #- service: *push3
+      #- service: *push4
+      #- service: *push5
+
+##############
+# INPUT TEXT #
+##############
+
+input_text:
+  prod_amazon_url:
+    name: URL Prodotto Amazon
+    icon: mdi:link-variant
+
+################
+# INPUT NUMBER #
+################
+
+input_number:
+  prod_amazon_price_buy:
+    name: Prezzo di acquisto
+    min: 0
+    max: 10000
+    step: 0.50
+    unit_of_measurement: "€"
+    mode: box
+    icon: mdi:currency-eur
+
+##########
+# SCRAPE #
+##########
+multiscrape:
+  - name: Prodotto Amazon
+    resource_template: "{{ states.input_text.prod_amazon_url.state }}"
+    scan_interval: 3600
+    button:
+      - unique_id: prod_amazon_refresh_button
+    sensor:
+      - unique_id: prod_amazon_price
+        name: Prezzo attuale
+        select: ".a-offscreen"
+        device_class: monetary
+        icon: mdi:chart-bar
+        value_template: '{{ (value.replace(",", ".").replace("€", "")) | float(2) }}'
+        unit_of_measurement: "€"
+      - unique_id: prod_amazon_title
+        name: Titolo prodotto
+        select: "#productTitle"
+      - unique_id: prod_amazon_img
+        name: Immagine
+        select: "#landingImage"
+        attribute: src
+
+###############
+# AUTOMAZIONI #
+###############
+automation:
+  - alias: Notifica prezzo di acquisto raggiunto
+    trigger:
+      platform: numeric_state
+      entity_id: input_number.prod_amazon_price_buy
+      above: sensor.prod_amazon_price
+    action:
+      service: notify.amazon_gruppo_notifiche_app
+      data:
+        title: "💰 E' il momento di acquistare!"
+        message: >
+          Prezzo richiesto: <b>{{ states.input_number.prod_amazon_price_buy.state }} €</b><br />
+          Prezzo attuale: <b>{{ states.sensor.prod_amazon_price.state }} €</b>
+        data:
+          clickAction: "{{ states.input_text.prod_amazon_url.state }}"

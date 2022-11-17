@@ -1,0 +1,11 @@
+type: vertical-stack
+cards:
+  - type: markdown
+    content: '![Image]({{states.sensor.prod_amazon_img.state }})'
+  - type: entities
+    entities:
+      - entity: sensor.prod_amazon_title
+      - entity: sensor.prod_amazon_price
+      - entity: input_number.prod_amazon_price_buy
+      - entity: input_text.prod_amazon_url
+      - entity: button.prod_amazon_refresh_button
